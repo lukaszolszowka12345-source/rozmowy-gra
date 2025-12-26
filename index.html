@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Rozmowy — gra w pytania (V2)</title>
+  <title>Rozmowy — gra w pytania (V2.1)</title>
   <style>
     :root{--bg:#0b1020;--card:#0f172a;--bar:#111827;--line:#243046;--text:#fff;--m:rgba(255,255,255,.75);--m2:rgba(255,255,255,.55);--good:#22c55e;--danger:#ef4444;}
     html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui}
@@ -23,7 +23,7 @@
     .chip.active{background:#1f2a44;border-color:#3b4a6a}
     .grid{display:grid;grid-template-columns:1fr;gap:8px;max-width:520px;width:100%;margin:0 auto}
     .label{font-size:12px;color:var(--m);text-align:left}
-    input[type="number"],input[type="text"]{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0b132b;color:var(--text);font-size:16px;outline:none}
+    select,input[type="text"]{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0b132b;color:var(--text);font-size:16px;outline:none}
     input::placeholder{color:var(--m2)}
     .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center}
     .btn{border:0;border-radius:16px;padding:12px 14px;font-weight:900;cursor:pointer;background:var(--good);color:#052e13}
@@ -45,7 +45,7 @@
   <header>
     <div style="width:44px"></div>
     <div class="title">
-      <b>Rozmowy <span class="badge">WERSJA V2</span></b>
+      <b>Rozmowy <span class="badge">V2.1</span></b>
       <span>Gra w pytania • bez wygranych i przegranych</span>
     </div>
     <button class="btn secondary" id="newGameBtn">Nowa gra</button>
@@ -69,19 +69,23 @@
         <div class="sep"></div>
 
         <div class="grid">
-          <div class="label">Liczba miejsc (max 20)</div>
-          <input id="playerCount" type="number" min="2" max="20" value="2"/>
+          <div class="label">Liczba graczy (2–20)</div>
+          <select id="playerCount">
+            <option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+            <option>7</option><option>8</option><option>9</option><option>10</option><option>11</option>
+            <option>12</option><option>13</option><option>14</option><option>15</option><option>16</option>
+            <option>17</option><option>18</option><option>19</option><option>20</option>
+          </select>
 
           <div class="label" style="margin-top:6px">Imiona graczy (kolejność ma znaczenie)</div>
           <div id="playersGrid" class="grid"></div>
 
           <div class="row" style="margin-top:10px">
-            <button class="btn big" id="startBtn">START</button>
+            <button class="btn big" id="startBtn" disabled>START</button>
           </div>
 
-          <div class="small">
-            Minimum 2 osoby. Tura: Gracz A losuje pytanie dla Gracza B.<br>
-            Każdy gracz ma 2 zmiany pytania na CAŁĄ GRĘ.
+          <div class="small" id="startHint">
+            Wpisz min. 2 imiona i wybierz przynajmniej 1 kategorię.
           </div>
         </div>
       </section>
@@ -110,7 +114,7 @@
           <button class="btn danger" id="resetQuestionsBtn">Reset pytań</button>
         </div>
 
-        <div class="small">Tip: jeśli pytanie jest za mocne — możecie powiedzieć „pas”.</div>
+        <div class="small">Każdy gracz ma 2 zmiany pytania na CAŁĄ GRĘ (dla pytań kierowanych do niego).</div>
       </section>
 
     </div>
@@ -118,280 +122,350 @@
 </div>
 
 <script>
-const el = (id) => document.getElementById(id);
+(function(){
+  function el(id){ return document.getElementById(id); }
 
-// sections
-const setupSec = el("setup");
-const playSec  = el("play");
+  var setupSec = el("setup");
+  var playSec  = el("play");
 
-// setup UI
-const setupChips = el("setupChips");
-const setupCatsMeta = el("setupCatsMeta");
-const playerCountEl = el("playerCount");
-const playersGrid = el("playersGrid");
-const startBtn = el("startBtn");
+  var setupChips = el("setupChips");
+  var setupCatsMeta = el("setupCatsMeta");
+  var playerCountEl = el("playerCount");
+  var playersGrid = el("playersGrid");
+  var startBtn = el("startBtn");
+  var startHint = el("startHint");
 
-// play UI
-const newGameBtn = el("newGameBtn");
-const lockedCatsLine = el("lockedCatsLine");
-const poolLine = el("poolLine");
-const turnLine = el("turnLine");
-const questionLine = el("questionLine");
-const otherLine = el("otherLine");
-const mainBtn = el("mainBtn");
-const otherBtn = el("otherBtn");
-const copyBtn = el("copyBtn");
-const resetQuestionsBtn = el("resetQuestionsBtn");
+  var newGameBtn = el("newGameBtn");
+  var lockedCatsLine = el("lockedCatsLine");
+  var poolLine = el("poolLine");
+  var turnLine = el("turnLine");
+  var questionLine = el("questionLine");
+  var otherLine = el("otherLine");
+  var mainBtn = el("mainBtn");
+  var otherBtn = el("otherBtn");
+  var copyBtn = el("copyBtn");
+  var resetQuestionsBtn = el("resetQuestionsBtn");
 
-// 10 x 10 = 100 pytań na kategorię
-const STEMS = [
-  "Gdy myślisz o „{T}”, co jest dla Ciebie najtrudniejsze do powiedzenia na głos?",
-  "W obszarze „{T}” — co w Tobie domaga się większej troski i dlaczego?",
-  "W obszarze „{T}” — jaka Twoja potrzeba najczęściej nie jest zauważana?",
-  "W obszarze „{T}” — co robisz automatycznie, a chciał(a)byś robić świadomie?",
-  "W obszarze „{T}” — jaka jedna mała zmiana dałaby największą ulgę?",
-  "W obszarze „{T}” — czego się boisz, że się stanie, jeśli będziesz szczery/szczera?",
-  "W obszarze „{T}” — co jest Twoją siłą, a co cieniem tej samej cechy?",
-  "W obszarze „{T}” — jak rozpoznajesz, że przekraczasz własne granice?",
-  "W obszarze „{T}” — co dziś warto odpuścić, żeby odzyskać spokój?",
-  "W obszarze „{T}” — jak wyglądałaby Twoja dojrzała reakcja w trudnej chwili?"
-];
+  var STEMS = [
+    "Gdy myślisz o „{T}”, co jest dla Ciebie najtrudniejsze do powiedzenia na głos?",
+    "W obszarze „{T}” — co w Tobie domaga się większej troski i dlaczego?",
+    "W obszarze „{T}” — jaka Twoja potrzeba najczęściej nie jest zauważana?",
+    "W obszarze „{T}” — co robisz automatycznie, a chciał(a)byś robić świadomie?",
+    "W obszarze „{T}” — jaka jedna mała zmiana dałaby największą ulgę?",
+    "W obszarze „{T}” — czego się boisz, że się stanie, jeśli będziesz szczery/szczera?",
+    "W obszarze „{T}” — co jest Twoją siłą, a co cieniem tej samej cechy?",
+    "W obszarze „{T}” — jak rozpoznajesz, że przekraczasz własne granice?",
+    "W obszarze „{T}” — co dziś warto odpuścić, żeby odzyskać spokój?",
+    "W obszarze „{T}” — jak wyglądałaby Twoja dojrzała reakcja w trudnej chwili?"
+  ];
 
-const CATS = [
-  { key:"relacje", label:"Relacje", themes:["zaufanie","granice","bliskość","komunikacja","konflikt","wsparcie","szacunek","zazdrość","intymność","wybaczenie"] },
-  { key:"emocje", label:"Emocje", themes:["złość","smutek","lęk","wstyd","poczucie winy","radość","frustracja","bezradność","ulga","spokój"] },
-  { key:"ja", label:"Ja (self)", themes:["wartości","tożsamość","samoocena","wewnętrzny krytyk","akceptacja","potrzeby","sprawczość","autentyczność","perfekcjonizm","odwaga"] },
-  { key:"rozwoj", label:"Rozwój", themes:["nawyki","dyscyplina","cele","prokrastynacja","energia","nauka","porażka","cierpliwość","odpuszczanie","priorytety"] },
-  { key:"rodzina", label:"Rodzina", themes:["komunikacja","role","granice","tradycje","konflikt","wsparcie","dzieciństwo","wzorce","emocje w domu","tematy tabu"] }
-];
+  var CATS = [
+    { key:"relacje", label:"Relacje", themes:["zaufanie","granice","bliskość","komunikacja","konflikt","wsparcie","szacunek","zazdrość","intymność","wybaczenie"] },
+    { key:"emocje", label:"Emocje", themes:["złość","smutek","lęk","wstyd","poczucie winy","radość","frustracja","bezradność","ulga","spokój"] },
+    { key:"ja", label:"Ja (self)", themes:["wartości","tożsamość","samoocena","wewnętrzny krytyk","akceptacja","potrzeby","sprawczość","autentyczność","perfekcjonizm","odwaga"] },
+    { key:"rozwoj", label:"Rozwój", themes:["nawyki","dyscyplina","cele","prokrastynacja","energia","nauka","porażka","cierpliwość","odpuszczanie","priorytety"] },
+    { key:"rodzina", label:"Rodzina", themes:["komunikacja","role","granice","tradycje","konflikt","wsparcie","dzieciństwo","wzorce","emocje w domu","tematy tabu"] }
+  ];
 
-function shuffle(arr){
-  for (let i=arr.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
-  }
-  return arr;
-}
-function buildBank(cat){
-  const out=[];
-  for (const t of cat.themes){
-    for (const s of STEMS){
-      out.push(s.replaceAll("{T}", t));
+  function shuffle(arr){
+    for (var i=arr.length-1;i>0;i--){
+      var j=Math.floor(Math.random()*(i+1));
+      var t=arr[i]; arr[i]=arr[j]; arr[j]=t;
     }
-  }
-  return shuffle(out); // 100 dokładnie
-}
-
-const setupState = { selectedCats: new Set(CATS.map(c=>c.key)) };
-const game = {
-  players: [],
-  turnAsker: 0,
-  questionActive: false,
-  lockedCats: [],
-  banks: {},
-  bags: {},
-  usedCount: 0,
-  current: null,
-  changesLeft: [] // 2 na CAŁĄ GRĘ per gracz (ten co dostaje pytanie)
-};
-
-function setSection(isSetup){
-  setupSec.classList.toggle("hide", !isSetup);
-  playSec.classList.toggle("hide", isSetup);
-}
-
-function updateSetupMeta(){
-  const labels = CATS.filter(c=>setupState.selectedCats.has(c.key)).map(c=>c.label);
-  setupCatsMeta.textContent = labels.length ? `Wybrane: ${labels.join(", ")}` : `Wybierz przynajmniej jedną kategorię.`;
-}
-
-function renderChips(){
-  setupChips.innerHTML="";
-  for (const cat of CATS){
-    const b=document.createElement("button");
-    b.className="chip active";
-    b.textContent=cat.label;
-    b.onclick=()=>{
-      setupState.selectedCats.has(cat.key) ? setupState.selectedCats.delete(cat.key) : setupState.selectedCats.add(cat.key);
-      b.classList.toggle("active", setupState.selectedCats.has(cat.key));
-      updateSetupMeta(); updateStartBtn();
-    };
-    setupChips.appendChild(b);
-  }
-  updateSetupMeta();
-}
-
-function clamp(n,mn,mx){ return Math.max(mn, Math.min(mx, n)); }
-
-function renderPlayers(){
-  playersGrid.innerHTML="";
-  const n=clamp(parseInt(playerCountEl.value||"2",10),2,20);
-  playerCountEl.value=String(n);
-  for (let i=0;i<n;i++){
-    const w=document.createElement("div");
-    w.innerHTML=`<div class="label">Gracz ${i+1}</div><input type="text" id="p_${i}" placeholder="Imię (np. Łukasz)"/>`;
-    playersGrid.appendChild(w);
-    w.querySelector("input").addEventListener("input", updateStartBtn);
-  }
-  updateStartBtn();
-}
-
-function getPlayers(){
-  const n=clamp(parseInt(playerCountEl.value||"2",10),2,20);
-  const out=[];
-  for (let i=0;i<n;i++){
-    const v=(document.getElementById(\`p_\${i}\`)?.value||"").trim();
-    if (v) out.push(v);
-  }
-  return out;
-}
-
-function updateStartBtn(){
-  const okPlayers = getPlayers().length >= 2;
-  const okCats = setupState.selectedCats.size >= 1;
-  startBtn.disabled = !(okPlayers && okCats);
-  startBtn.textContent = startBtn.disabled ? "Wpisz min. 2 imiona + wybierz kategorie" : "START";
-}
-
-function refillBag(catKey){
-  const n = game.banks[catKey].length;
-  game.bags[catKey] = shuffle(Array.from({length:n},(_,i)=>i));
-}
-function remainingTotal(){
-  let t=0; for (const k of game.lockedCats) t += (game.bags[k]?.length||0); return t;
-}
-function activeCats(){
-  return game.lockedCats.filter(k => (game.bags[k] && game.bags[k].length>0));
-}
-function pickCategory(){
-  const keys=activeCats(); if(!keys.length) return null;
-  return keys[Math.floor(Math.random()*keys.length)];
-}
-function drawOne(){
-  const k=pickCategory(); if(!k) return null;
-  const idx=game.bags[k].pop();
-  game.usedCount += 1;
-  return {catKey:k, idx, text: game.banks[k][idx]};
-}
-function catLabel(k){ return CATS.find(c=>c.key===k)?.label || k; }
-
-function indices(){
-  const askerIdx = game.turnAsker;
-  const targetIdx = (game.turnAsker+1) % game.players.length;
-  return {askerIdx, targetIdx};
-}
-function pair(){
-  const {askerIdx,targetIdx}=indices();
-  return {asker:game.players[askerIdx], target:game.players[targetIdx]};
-}
-
-function renderHeader(){
-  lockedCatsLine.textContent = `Kategorie (zablokowane): ${game.lockedCats.map(catLabel).join(", ")}`;
-  poolLine.textContent = `Pozostało pytań: ${remainingTotal()} • Wykorzystane: ${game.usedCount}`;
-}
-function renderTurn(){
-  const {asker,target}=pair();
-  const {targetIdx}=indices();
-  const left = game.changesLeft[targetIdx] ?? 0;
-
-  turnLine.textContent = `Teraz: ${asker} losuje pytanie dla ${target}`;
-  otherLine.textContent = `Zmiany pytania dla ${target}: ${left}/2`;
-
-  otherBtn.textContent = `Inne pytanie (${left})`;
-  otherBtn.disabled = !game.questionActive || left<=0;
-  copyBtn.disabled = !game.questionActive;
-
-  mainBtn.textContent = game.questionActive ? "Następny gracz" : "Losuj pytanie";
-}
-
-function startGame(){
-  const players=getPlayers();
-  const cats=Array.from(setupState.selectedCats);
-  if(players.length<2 || cats.length<1) return;
-
-  game.players = players;
-  game.turnAsker = 0;
-  game.questionActive = false;
-  game.lockedCats = cats;
-  game.banks = {}; game.bags = {};
-  game.usedCount = 0;
-  game.current = null;
-  game.changesLeft = players.map(()=>2);
-
-  for (const k of game.lockedCats){
-    const cat=CATS.find(c=>c.key===k);
-    game.banks[k]=buildBank(cat);
-    refillBag(k);
+    return arr;
   }
 
-  setSection(false);
-  mainBtn.disabled=false;
-  questionLine.textContent="Kliknij „Losuj pytanie”, żeby zacząć.";
-  renderHeader(); renderTurn();
-}
-
-function nextTurn(){
-  game.turnAsker = (game.turnAsker+1) % game.players.length;
-  game.questionActive=false;
-  game.current=null;
-  questionLine.textContent="Kliknij „Losuj pytanie”, żeby wylosować pytanie dla kolejnej osoby.";
-  renderHeader(); renderTurn();
-}
-
-function drawOrNext(){
-  if(game.questionActive){ nextTurn(); return; }
-  const q=drawOne();
-  if(!q){
-    questionLine.textContent="Skończyły się pytania. Kliknij „Reset pytań” albo „Nowa gra”.";
-    mainBtn.disabled=true; otherBtn.disabled=true; copyBtn.disabled=true;
-    return;
+  function buildBank(cat){
+    var out=[];
+    for (var i=0;i<cat.themes.length;i++){
+      for (var s=0;s<STEMS.length;s++){
+        out.push(STEMS[s].replace("{T}", cat.themes[i]));
+      }
+    }
+    return shuffle(out); // 100
   }
-  game.current=q;
-  game.questionActive=true;
-  questionLine.textContent=q.text;
-  renderHeader(); renderTurn();
-}
 
-function otherQuestion(){
-  if(!game.questionActive) return;
-  const {targetIdx}=indices();
-  const left=game.changesLeft[targetIdx] ?? 0;
-  if(left<=0) return;
+  var setupState = { selectedCats: {} };
+  for (var c=0;c<CATS.length;c++) setupState.selectedCats[CATS[c].key]=true;
 
-  game.changesLeft[targetIdx]-=1;
+  var game = {
+    players: [],
+    turnAsker: 0,
+    questionActive: false,
+    lockedCats: [],
+    banks: {},
+    bags: {},
+    usedCount: 0,
+    current: null,
+    changesLeft: []
+  };
 
-  const q=drawOne();
-  if(!q){
-    questionLine.textContent="Skończyły się pytania. Kliknij „Reset pytań” albo „Nowa gra”.";
-    mainBtn.disabled=true; otherBtn.disabled=true; copyBtn.disabled=true;
-    return;
+  function setSection(isSetup){
+    setupSec.classList.toggle("hide", !isSetup);
+    playSec.classList.toggle("hide", isSetup);
   }
-  game.current=q;
-  questionLine.textContent=q.text;
-  renderHeader(); renderTurn();
-}
 
-function copyCurrent(){
-  if(!game.current) return;
-  const {asker,target}=pair();
-  const payload = `[${catLabel(game.current.catKey)}] ${asker} → ${target}: ${game.current.text}`;
+  function catLabel(key){
+    for (var i=0;i<CATS.length;i++) if (CATS[i].key===key) return CATS[i].label;
+    return key;
+  }
 
-  (navigator.clipboard?.writeText ? navigator.clipboard.writeText(payload) : Promise.reject())
-    .then(()=>{ copyBtn.textContent="Skopiowano ✓"; setTimeout(()=>copyBtn.textContent="Kopiuj",900); })
-    .catch(()=>{ const ta=document.createElement("textarea"); ta.value=payload; document.body.appendChild(ta); ta.select(); try{document.execCommand("copy")}catch{} document.body.removeChild(ta);
-      copyBtn.textContent="Skopiowano ✓"; setTimeout(()=>copyBtn.textContent="Kopiuj",900); });
-}
+  function updateSetupMeta(){
+    var labels=[];
+    for (var i=0;i<CATS.length;i++){
+      if (setupState.selectedCats[CATS[i].key]) labels.push(CATS[i].label);
+    }
+    setupCatsMeta.textContent = labels.length ? ("Wybrane: " + labels.join(", ")) : "Wybierz przynajmniej jedną kategorię.";
+  }
 
-function resetQuestions(){
-  game.usedCount=0;
-  for(const k of game.lockedCats) refillBag(k);
-  game.questionActive=false; game.current=null;
-  mainBtn.disabled=false;
-  questionLine.textContent="Pule pytań zresetowane. Kliknij „Losuj pytanie”.";
-  renderHeader(); renderTurn();
-}
+  function renderChips(){
+    setupChips.innerHTML="";
+    for (var i=0;i<CATS.length;i++){
+      (function(cat){
+        var b=document.createElement("button");
+        b.className="chip active";
+        b.textContent=cat.label;
+        b.onclick=function(){
+          setupState.selectedCats[cat.key]=!setupState.selectedCats[cat.key];
+          b.classList.toggle("active", !!setupState.selectedCats[cat.key]);
+          updateSetupMeta(); updateStartBtn();
+        };
+        setupChips.appendChild(b);
+      })(CATS[i]);
+    }
+    updateSetupMeta();
+  }
 
-function newGame(){
+  function renderPlayers(){
+    playersGrid.innerHTML="";
+    var n = parseInt(playerCountEl.value,10) || 2;
+    for (var i=0;i<n;i++){
+      var wrap=document.createElement("div");
+      wrap.innerHTML = '<div class="label">Gracz '+(i+1)+'</div><input type="text" id="p_'+i+'" placeholder="Imię (np. Łukasz)">';
+      playersGrid.appendChild(wrap);
+      wrap.querySelector("input").addEventListener("input", updateStartBtn);
+    }
+    updateStartBtn();
+  }
+
+  function getPlayers(){
+    var n = parseInt(playerCountEl.value,10) || 2;
+    var out=[];
+    for (var i=0;i<n;i++){
+      var v = (el("p_"+i).value || "").trim();
+      if (v) out.push(v);
+    }
+    return out;
+  }
+
+  function selectedCatsArray(){
+    var out=[];
+    for (var i=0;i<CATS.length;i++){
+      if (setupState.selectedCats[CATS[i].key]) out.push(CATS[i].key);
+    }
+    return out;
+  }
+
+  function updateStartBtn(){
+    var players=getPlayers();
+    var cats=selectedCatsArray();
+    var okPlayers = players.length >= 2;
+    var okCats = cats.length >= 1;
+    startBtn.disabled = !(okPlayers && okCats);
+    startHint.textContent = startBtn.disabled
+      ? "Wpisz min. 2 imiona i wybierz przynajmniej 1 kategorię."
+      : "Gotowe. Kliknij START.";
+  }
+
+  function refillBag(catKey){
+    var n = game.banks[catKey].length;
+    var bag=[];
+    for (var i=0;i<n;i++) bag.push(i);
+    game.bags[catKey]=shuffle(bag);
+  }
+
+  function remainingTotal(){
+    var t=0;
+    for (var i=0;i<game.lockedCats.length;i++){
+      var k=game.lockedCats[i];
+      t += (game.bags[k] ? game.bags[k].length : 0);
+    }
+    return t;
+  }
+
+  function activeCats(){
+    var keys=[];
+    for (var i=0;i<game.lockedCats.length;i++){
+      var k=game.lockedCats[i];
+      if (game.bags[k] && game.bags[k].length>0) keys.push(k);
+    }
+    return keys;
+  }
+
+  function drawOne(){
+    var keys=activeCats();
+    if (!keys.length) return null;
+    var catKey = keys[Math.floor(Math.random()*keys.length)];
+    var idx = game.bags[catKey].pop();
+    game.usedCount += 1;
+    return {catKey:catKey, idx:idx, text: game.banks[catKey][idx]};
+  }
+
+  function indices(){
+    var askerIdx = game.turnAsker;
+    var targetIdx = (game.turnAsker+1) % game.players.length;
+    return {askerIdx:askerIdx, targetIdx:targetIdx};
+  }
+
+  function pair(){
+    var ids=indices();
+    return {asker: game.players[ids.askerIdx], target: game.players[ids.targetIdx], targetIdx: ids.targetIdx};
+  }
+
+  function renderHeader(){
+    var labels=[];
+    for (var i=0;i<game.lockedCats.length;i++) labels.push(catLabel(game.lockedCats[i]));
+    lockedCatsLine.textContent = "Kategorie (zablokowane): " + labels.join(", ");
+    poolLine.textContent = "Pozostało pytań: " + remainingTotal() + " • Wykorzystane: " + game.usedCount;
+  }
+
+  function renderTurn(){
+    var p=pair();
+    var left = game.changesLeft[p.targetIdx] || 0;
+    turnLine.textContent = "Teraz: " + p.asker + " losuje pytanie dla " + p.target;
+    otherLine.textContent = "Zmiany pytania dla " + p.target + ": " + left + "/2";
+
+    otherBtn.textContent = "Inne pytanie ("+left+")";
+    otherBtn.disabled = !game.questionActive || left<=0;
+    copyBtn.disabled = !game.questionActive;
+
+    mainBtn.textContent = game.questionActive ? "Następny gracz" : "Losuj pytanie";
+  }
+
+  function startGame(){
+    var players=getPlayers();
+    var cats=selectedCatsArray();
+    if (players.length<2 || cats.length<1) return;
+
+    game.players = players;
+    game.turnAsker = 0;
+    game.questionActive = false;
+    game.lockedCats = cats;
+    game.banks = {};
+    game.bags = {};
+    game.usedCount = 0;
+    game.current = null;
+    game.changesLeft = [];
+    for (var i=0;i<players.length;i++) game.changesLeft.push(2);
+
+    for (var i=0;i<cats.length;i++){
+      var k=cats[i];
+      for (var j=0;j<CATS.length;j++){
+        if (CATS[j].key===k){
+          game.banks[k]=buildBank(CATS[j]);
+          refillBag(k);
+        }
+      }
+    }
+
+    setSection(false);
+    mainBtn.disabled=false;
+    questionLine.textContent="Kliknij „Losuj pytanie”, żeby zacząć.";
+    renderHeader();
+    renderTurn();
+  }
+
+  function nextTurn(){
+    game.turnAsker = (game.turnAsker+1) % game.players.length;
+    game.questionActive=false;
+    game.current=null;
+    questionLine.textContent="Kliknij „Losuj pytanie”, żeby wylosować pytanie dla kolejnej osoby.";
+    renderHeader(); renderTurn();
+  }
+
+  function drawOrNext(){
+    if(game.questionActive){ nextTurn(); return; }
+    var q=drawOne();
+    if(!q){
+      questionLine.textContent="Skończyły się pytania. Kliknij „Reset pytań” albo „Nowa gra”.";
+      mainBtn.disabled=true; otherBtn.disabled=true; copyBtn.disabled=true;
+      return;
+    }
+    game.current=q;
+    game.questionActive=true;
+    questionLine.textContent=q.text;
+    renderHeader(); renderTurn();
+  }
+
+  function otherQuestion(){
+    if(!game.questionActive) return;
+    var p=pair();
+    var left = game.changesLeft[p.targetIdx] || 0;
+    if(left<=0) return;
+    game.changesLeft[p.targetIdx]=left-1;
+
+    var q=drawOne();
+    if(!q){
+      questionLine.textContent="Skończyły się pytania. Kliknij „Reset pytań” albo „Nowa gra”.";
+      mainBtn.disabled=true; otherBtn.disabled=true; copyBtn.disabled=true;
+      return;
+    }
+    game.current=q;
+    questionLine.textContent=q.text;
+    renderHeader(); renderTurn();
+  }
+
+  function copyCurrent(){
+    if(!game.current) return;
+    var p=pair();
+    var payload = "["+catLabel(game.current.catKey)+"] "+p.asker+" → "+p.target+": "+game.current.text;
+
+    var ok = (navigator.clipboard && navigator.clipboard.writeText)
+      ? navigator.clipboard.writeText(payload)
+      : Promise.reject();
+
+    ok.then(function(){
+      copyBtn.textContent="Skopiowano ✓";
+      setTimeout(function(){ copyBtn.textContent="Kopiuj"; }, 900);
+    }).catch(function(){
+      var ta=document.createElement("textarea");
+      ta.value=payload;
+      document.body.appendChild(ta);
+      ta.select();
+      try{document.execCommand("copy");}catch(e){}
+      document.body.removeChild(ta);
+      copyBtn.textContent="Skopiowano ✓";
+      setTimeout(function(){ copyBtn.textContent="Kopiuj"; }, 900);
+    });
+  }
+
+  function resetQuestions(){
+    game.usedCount=0;
+    for (var i=0;i<game.lockedCats.length;i++) refillBag(game.lockedCats[i]);
+    game.questionActive=false; game.current=null;
+    mainBtn.disabled=false;
+    questionLine.textContent="Pule pytań zresetowane. Kliknij „Losuj pytanie”.";
+    renderHeader(); renderTurn();
+  }
+
+  function newGame(){
+    setSection(true);
+    updateSetupMeta(); renderPlayers();
+  }
+
+  playerCountEl.value="2";
+  renderChips();
+  renderPlayers();
   setSection(true);
-  up
-  
+
+  playerCountEl.addEventListener("change", renderPlayers);
+  startBtn.addEventListener("click", startGame);
+  mainBtn.addEventListener("click", drawOrNext);
+  otherBtn.addEventListener("click", otherQuestion);
+  copyBtn.addEventListener("click", copyCurrent);
+  resetQuestionsBtn.addEventListener("click", resetQuestions);
+  newGameBtn.addEventListener("click", newGame);
+})();
+</script>
+</body>
+</html>
