@@ -94,6 +94,65 @@
     @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
     .q-anim { animation: fadeUp .18s ease-out; }
 
+  /* === ROZKMINKI: V7 layout boost (mobile-first) === */
+
+/* całe UI wyżej, mniej przewijania */
+main{
+  align-items: flex-start !important;
+  padding-top: 10px !important;
+  padding-bottom: 14px !important;
+}
+.stack{ gap: 10px !important; }
+
+/* większy tytuł i elementy startu */
+.heroTitle{
+  font-size: 50px !important;
+  margin-top: 2px !important;
+  margin-bottom: 10px !important;
+}
+
+/* akrostych: wyśrodkowany i mniej rozciągnięte ramki */
+.acro{
+  max-width: 520px !important;
+  margin: 10px auto 0 auto !important;
+  align-items: center !important;
+}
+.acroLine{
+  max-width: 460px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 10px 12px !important;
+}
+.bigLetter{ font-size: 30px !important; }
+.word{ font-size: 20px !important; }
+
+/* opis: większy i centrowany */
+.lead,
+#startScreen .small{
+  font-size: 14px !important;
+  max-width: 720px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center !important;
+  line-height: 1.5 !important;
+}
+
+/* setup: większe napisy, większe przyciski/chipy */
+#setup h2{ font-size: 22px !important; }
+.chip{ font-size: 14px !important; padding: 10px 13px !important; }
+.label{ font-size: 13px !important; }
+select, input[type="text"]{ font-size: 17px !important; }
+
+/* w grze większe pytanie */
+.question{ font-size: 24px !important; }
+.turn{ font-size: 15px !important; }
+
+/* na małych ekranach: jeszcze minimalnie dopasuj */
+@media (max-width: 420px){
+  .heroTitle{ font-size: 44px !important; }
+  .word{ font-size: 19px !important; }
+  .question{ font-size: 22px !important; }
+}
   </style>
 </head>
 <body>
