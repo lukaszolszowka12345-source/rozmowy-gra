@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>ROZKMINKI — DEMO</title>
+  <style>
+    :root{
+      --bg0:#070A14; --bg1:#0B1020;
+      --card:rgba(18,26,46,.72);
+      --line:rgba(255,255,255,.12);
+      --text:#fff;
+      --mut:rgba(255,255,255,.72);
+      --mut2:rgba(255,255,255,.55);
+      --accent:#D4AF37;
+      --accent2:#F3E2A5;
+      --btnDark:rgba(10,16,35,.55);
+      --shadow:rgba(0,0,0,.45);
+    }
+    html,body{margin:0;height:100%;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    body{
+      display:flex;justify-content:center;
+      background:
+        radial-gradient(900px 600px at 18% 12%, rgba(212,175,55,.14), transparent 60%),
+        radial-gradient(900px 600px at 82% 22%, rgba(99,102,241,.12), transparent 62%),
+        radial-gradient(900px 600px at 55% 85%, rgba(236,72,153,.09), transparent 62%),
+        repeating-linear-gradient(135deg, rgba(255,255,255,.04) 0 1px, transparent 1px 14px),
+        repeating-linear-gradient(45deg, rgba(255,255,255,.02) 0 1px, transparent 1px 18px),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+    .app{width:100%;max-width:980px;min-height:100%;display:flex;flex-direction:column}
+    header{
+      position:sticky;top:0;z-index:5;
+      padding:14px 16px;
+      background:rgba(8,12,24,.65);
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line);
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+    }
+    header .title{flex:1;text-align:center;line-height:1.15}
+    header .title b{font-size:18px}
+    header .title span{display:block;font-size:12px;color:var(--mut)}
+    main{flex:1;display:flex;align-items:center;justify-content:center;padding:14px}
+    .stack{width:100%;display:flex;flex-direction:column;gap:12px;align-items:center}
+    .panel{
+      width:100%;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:16px;
+      box-shadow: 0 22px 70px var(--shadow);
+    }
+    .sep{height:1px;background:var(--line);margin:12px 0}
+    .center{text-align:center}
+    .small{font-size:12px;color:var(--mut2);text-align:center}
+    .badge{
+      display:inline-block;font-weight:900;font-size:12px;padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(212,175,55,.35);
+      background:rgba(10,16,35,.55);
+      color:var(--accent2);
+    }
+    .heroTitle{font-weight:1000;letter-spacing:2px;font-size:44px;margin:6px 0 10px 0;}
+    .acro{margin:14px auto 0 auto;max-width:560px;display:flex;flex-direction:column;gap:8px;text-align:left;}
+    .acroLine{display:flex;align-items:baseline;gap:10px;padding:10px 12px;border-radius:16px;border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));}
+    .bigLetter{font-family: ui-serif, Georgia, "Times New Roman", serif;font-size:28px;line-height:1;font-weight:900;color:var(--accent2);
+      min-width:22px;text-shadow: 0 10px 30px rgba(212,175,55,.14);}
+    .word{font-family: ui-serif, Georgia, "Times New Roman", serif;font-size:18px;letter-spacing:.2px;}
+    .grid{display:grid;grid-template-columns:1fr;gap:8px;max-width:620px;width:100%;margin:0 auto}
+    .label{font-size:12px;color:var(--mut);text-align:left}
+    select,input[type="text"]{width:100%;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--btnDark);
+      color:var(--text);font-size:16px;outline:none;}
+    input::placeholder{color:var(--mut2)}
+    .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+    .chip{border:1px solid var(--line);background:var(--btnDark);color:var(--text);padding:9px 12px;border-radius:999px;font-weight:900;
+      cursor:pointer;user-select:none;transition: transform .08s ease, background .12s ease, border-color .12s ease;}
+    .chip:active{transform:scale(.985)}
+    .chip.active{background:rgba(26,36,64,.85);border-color:rgba(212,175,55,.35);}
+    .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center}
+    .btn{border:0;border-radius:18px;padding:12px 14px;font-weight:900;cursor:pointer;background:linear-gradient(180deg, var(--accent2), var(--accent));
+      color:#2a1f00;box-shadow: 0 18px 45px rgba(212,175,55,.18);transition: transform .08s ease, filter .12s ease;text-decoration:none;
+      display:inline-block;text-align:center;}
+    .btn:active{transform:scale(.985)}
+    .btn.secondary{background:var(--btnDark);color:var(--text);border:1px solid var(--line);box-shadow:none}
+    .btn.danger{background:#ef4444;color:#fff;box-shadow:none}
+    .btn.big{font-size:22px;padding:16px 18px;border-radius:18px;min-width:min(620px,100%)}
+    .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+    .hide{display:none!important}
+    .card{width:100%;border:1px solid var(--line);border-radius:24px;padding:16px;min-height:205px;display:flex;flex-direction:column;gap:10px;
+      justify-content:center;text-align:center;background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0));}
+    .turn{font-size:14px;color:var(--mut)}
+    .question{font-size:22px;line-height:1.25}
+    @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .q-anim { animation: fadeUp .18s ease-out; }
+
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div style="width:44px"></div>
+    <div class="title">
+      <b>ROZKMINKI <span class="badge">DEMO</span></b>
+      <span>Demo: krótka pula • poznaj klimat ROZKMINEK</span>
+    </div>
+    <a class="btn secondary" href="../v6/?v=6">Premium</a>
+  </header>
+
+  <main>
+    <div class="stack">
+      
+      <section class="panel center" id="startScreen">
+        <div class="heroTitle">ROZKMINKI</div>
+
+        <div class="acro">
+          <div class="acroLine"><span class="bigLetter">R</span><span class="word">Rozmowa</span></div>
+          <div class="acroLine"><span class="bigLetter">O</span><span class="word">Otwarta</span></div>
+          <div class="acroLine"><span class="bigLetter">Z</span><span class="word">Z sensem</span></div>
+          <div class="acroLine"><span class="bigLetter">K</span><span class="word">Krok po kroku</span></div>
+          <div class="acroLine"><span class="bigLetter">M</span><span class="word">Między ludźmi</span></div>
+          <div class="acroLine"><span class="bigLetter">I</span><span class="word">Intencjonalna</span></div>
+          <div class="acroLine"><span class="bigLetter">N</span><span class="word">Nie wymuszona</span></div>
+          <div class="acroLine"><span class="bigLetter">K</span><span class="word">Która łączy</span></div>
+          <div class="acroLine"><span class="bigLetter">I</span><span class="word">I pogłębia</span></div>
+        </div>
+
+        <div class="small" style="margin-top:12px;max-width:700px;line-height:1.5">
+          ROZKMINKI robią miejsce na rozmowę, która zostaje w głowie. Zamiast „co tam?” dostajesz pytanie,
+          które uruchamia ciekawość, uważność i śmiech — bez ocen i bez presji.
+          Idealne dla przyjaciół, rodziny i nowych znajomości: jeden klik, jedno pytanie, prawdziwa rozmowa.
+        </div>
+        
+        <div class="row" style="margin-top:14px">
+          <button class="btn big" id="goSetupBtn">Zagraj w demo</button>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <a class="btn" style="min-width:min(620px,100%);font-size:18px" href="../v6/?v=6">Premium — pełna wersja</a>
+        </div>
+        <div class="small">Demo ma krótką pulę pytań (po 1 z każdej kategorii). Premium ma pełne 300.</div>
+        
+      </section>
+    
+      
+      <section class="panel hide" id="setup">
+        <div class="center">
+          <h2 style="margin:0 0 6px 0">Ustawienia gry</h2>
+          <div class="small">Wybierz kategorie, wpisz imiona i start. (Losowanie jest zawsze losowe.)</div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="center" style="margin-bottom:8px"><b>Kategorie (10)</b></div>
+        <div class="chips" id="setupChips"></div>
+        <div class="small" id="setupCatsMeta" style="margin-top:8px"></div>
+
+        <div class="sep"></div>
+
+        <div class="grid">
+          <div class="label">Liczba graczy (2–20)</div>
+          <select id="playerCount"></select>
+
+          <div class="label" style="margin-top:6px">Imiona graczy (kolejność ma znaczenie)</div>
+          <div id="playersGrid" class="grid"></div>
+
+          <div class="row" style="margin-top:10px">
+            <button class="btn big" id="startBtn" disabled>START</button>
+          </div>
+
+          <div class="small" id="startHint">Wpisz min. 2 imiona i wybierz przynajmniej 1 kategorię.</div>
+        </div>
+      </section>
+    
+      
+      <section class="panel hide" id="play">
+        <div class="center">
+          <div class="small" id="lockedCatsLine"></div>
+          <div class="small" id="poolLine"></div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="card">
+          <div class="turn" id="turnLine">—</div>
+          <div class="question" id="questionLine">—</div>
+          <div class="small" id="otherLine">—</div>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <button class="btn big" id="mainBtn">Następny gracz</button>
+        </div>
+
+        <div class="row">
+          <button class="btn secondary" id="otherBtn" disabled>Inne pytanie</button>
+          <button class="btn secondary" id="copyBtn" disabled>Kopiuj</button>
+          <button class="btn danger" id="resetPoolBtn">Reset puli (w tej grze)</button>
+        </div>
+
+        <div class="small">
+          Każdy gracz ma 2 zmiany pytania na CAŁĄ GRĘ (dla pytań kierowanych do niego).<br>
+          W jednej grze pytania się nie powtarzają. Nowa gra = pełna pula od nowa.
+        </div>
+      </section>
+    
+    </div>
+  </main>
+</div>
+
+<script>
+  var CATS = [
+    { key:"relacje", label:"Relacje", questions:[
+      "Jaką rozmowę odkładasz i co by się stało, gdybyś ją odbył/a w tym tygodniu?"
+    ]},
+    { key:"emocje", label:"Emocje", questions:[
+      "Kiedy czujesz złość, o co najczęściej naprawdę chodzi pod spodem?"
+    ]},
+    { key:"ja", label:"Ja (self)", questions:[
+      "Gdzie w Twoim życiu brakuje Ci prostoty?"
+    ]},
+    { key:"rozwoj", label:"Rozwój", questions:[
+      "Jaka jedna rzecz, robiona codziennie przez 10 minut, zmieniłaby Twoje życie?"
+    ]},
+    { key:"rodzina", label:"Rodzina", questions:[
+      "Jak by wyglądała rodzinna rozmowa, której wszyscy unikają?"
+    ]},
+    { key:"intymnosc", label:"Intymność i seks", questions:[
+      "Co wolał(a)byś, żeby było częściej: czułość, namiętność, rozmowa, spontaniczność?"
+    ]},
+    { key:"praca_pieniadze", label:"Praca i pieniądze", questions:[
+      "Jaki jest Twój największy stres finansowy i czy on jest realny czy wyobrażony?"
+    ]},
+    { key:"zdrowie", label:"Zdrowie i ciało", questions:[
+      "Jak wygląda Twoja definicja „dbania o siebie” bez przesady i bez lenistwa?"
+    ]},
+    { key:"sens", label:"Sens i marzenia", questions:[
+      "Co byś zrobił/a, gdybyś wiedział/a, że Ci się nie może nie udać?"
+    ]},
+    { key:"zabawa", label:"Zabawa i ciekawość", questions:[
+      "Gdybyś miał/miała zaplanować jednodniową przygodę, co by było jej motywem?"
+    ]}
+  ];
+
+(function(){
+  function el(id){ return document.getElementById(id); }
+  function randInt(max){
+    if(max <= 0) return 0;
+    if(window.crypto && window.crypto.getRandomValues){
+      var a = new Uint32Array(1);
+      window.crypto.getRandomValues(a);
+      return Math.floor((a[0] / 4294967296) * max);
+    }
+    return Math.floor(Math.random() * max);
+  }
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){
+      var j = randInt(i+1);
+      var t = arr[i]; arr[i]=arr[j]; arr[j]=t;
+    }
+    return arr;
+  }
+
+  // NAV
+  var startScreen = el("startScreen");
+  var setupSec = el("setup");
+  var playSec  = el("play");
+  var goSetupBtn = el("goSetupBtn");
+  function showStart(){ startScreen.classList.remove("hide"); setupSec.classList.add("hide"); playSec.classList.add("hide"); }
+  function showSetup(){ startScreen.classList.add("hide"); setupSec.classList.remove("hide"); playSec.classList.add("hide"); }
+  function showPlay(){ startScreen.classList.add("hide"); setupSec.classList.add("hide"); playSec.classList.remove("hide"); }
+
+  // UI refs
+  var setupChips = el("setupChips");
+  var setupCatsMeta = el("setupCatsMeta");
+  var playerCountEl = el("playerCount");
+  var playersGrid = el("playersGrid");
+  var startBtn = el("startBtn");
+  var startHint = el("startHint");
+
+  var lockedCatsLine = el("lockedCatsLine");
+  var poolLine = el("poolLine");
+  var turnLine = el("turnLine");
+  var questionLine = el("questionLine");
+  var otherLine = el("otherLine");
+  var mainBtn = el("mainBtn");
+  var otherBtn = el("otherBtn");
+  var copyBtn = el("copyBtn");
+  var resetPoolBtn = el("resetPoolBtn");
+
+  // setup state
+  var setupState = { selectedCats:{} };
+  for(var i=0;i<CATS.length;i++) setupState.selectedCats[CATS[i].key] = true;
+
+  function catLabel(key){
+    for(var i=0;i<CATS.length;i++) if(CATS[i].key===key) return CATS[i].label;
+    return key;
+  }
+  function selectedCatsArray(){
+    var out=[];
+    for(var i=0;i<CATS.length;i++){
+      var k=CATS[i].key;
+      if(setupState.selectedCats[k]) out.push(k);
+    }
+    return out;
+  }
+  function updateSetupMeta(){
+    var labels=[], total=0;
+    for(var i=0;i<CATS.length;i++){
+      if(setupState.selectedCats[CATS[i].key]){
+        labels.push(CATS[i].label);
+        total += CATS[i].questions.length;
+      }
+    }
+    setupCatsMeta.textContent = labels.length
+      ? ("Wybrane: " + labels.join(", ") + " • Łącznie pytań: " + total)
+      : "Wybierz przynajmniej jedną kategorię.";
+  }
+  function renderChips(){
+    setupChips.innerHTML="";
+    for(var i=0;i<CATS.length;i++){
+      (function(cat){
+        var b=document.createElement("button");
+        b.className="chip active";
+        b.textContent=cat.label;
+        b.onclick=function(){
+          setupState.selectedCats[cat.key]=!setupState.selectedCats[cat.key];
+          b.classList.toggle("active", !!setupState.selectedCats[cat.key]);
+          updateSetupMeta();
+          updateStartBtn();
+        };
+        setupChips.appendChild(b);
+      })(CATS[i]);
+    }
+    updateSetupMeta();
+  }
+
+  function renderPlayerCount(){
+    playerCountEl.innerHTML="";
+    for(var n=2;n<=20;n++){
+      var opt=document.createElement("option");
+      opt.value=String(n);
+      opt.textContent=String(n);
+      playerCountEl.appendChild(opt);
+    }
+    playerCountEl.value="2";
+  }
+
+  function getCurrentTypedNames(){
+    var out=[];
+    var n = parseInt(playerCountEl.value,10) || 2;
+    for(var i=0;i<n;i++){
+      var inp = el("p_"+i);
+      out.push(inp ? inp.value : "");
+    }
+    return out;
+  }
+
+  function renderPlayers(preserve){
+    var prev = preserve ? getCurrentTypedNames() : [];
+    playersGrid.innerHTML="";
+    var n = parseInt(playerCountEl.value,10) || 2;
+
+    for(var i=0;i<n;i++){
+      var wrap=document.createElement("div");
+      wrap.innerHTML =
+        '<div class="label">Gracz '+(i+1)+'</div>' +
+        '<input type="text" id="p_'+i+'" placeholder="Imię (np. Łukasz)">';
+      playersGrid.appendChild(wrap);
+
+      var input = wrap.querySelector("input");
+      if(prev[i]) input.value = prev[i];
+      input.addEventListener("input", updateStartBtn);
+    }
+    updateStartBtn();
+  }
+
+  function getPlayers(){
+    var n = parseInt(playerCountEl.value,10) || 2;
+    var out=[];
+    for(var i=0;i<n;i++){
+      var inp = el("p_"+i);
+      var v = (inp ? inp.value : "").trim();
+      if(v) out.push(v);
+    }
+    return out;
+  }
+
+  function updateStartBtn(){
+    var players = getPlayers();
+    var cats = selectedCatsArray();
+    startBtn.disabled = !(players.length>=2 && cats.length>=1);
+    startHint.textContent = startBtn.disabled
+      ? "Wpisz min. 2 imiona i wybierz przynajmniej 1 kategorię."
+      : "Gotowe. Kliknij START.";
+  }
+
+  // game state
+  var game = {
+    players: [],
+    lockedCats: [],
+    remaining: [],
+    remainingCounts: {},
+    turnAsker: 0,
+    current: null,
+    changesLeft: []
+  };
+
+  function buildPool(catKeys){
+    var pool=[], counts={};
+    for(var i=0;i<catKeys.length;i++) counts[catKeys[i]] = 0;
+
+    for(var c=0;c<CATS.length;c++){
+      var cat = CATS[c];
+      if(counts.hasOwnProperty(cat.key)){
+        for(var q=0;q<cat.questions.length;q++){
+          pool.push({catKey:cat.key, text:cat.questions[q]});
+          counts[cat.key] += 1;
+        }
+      }
+    }
+    shuffle(pool);
+    return {pool:pool, counts:counts};
+  }
+
+  function indices(){
+    var askerIdx = game.turnAsker;
+    var targetIdx = (game.turnAsker + 1) % game.players.length;
+    return {askerIdx:askerIdx, targetIdx:targetIdx};
+  }
+  function pair(){
+    var ids = indices();
+    return {
+      asker: game.players[ids.askerIdx],
+      target: game.players[ids.targetIdx],
+      targetIdx: ids.targetIdx
+    };
+  }
+
+  function catsText(){
+    var labels=[];
+    for(var i=0;i<game.lockedCats.length;i++) labels.push(catLabel(game.lockedCats[i]));
+    return labels.join(", ");
+  }
+  function countsText(){
+    var parts=[];
+    for(var i=0;i<game.lockedCats.length;i++){
+      var k = game.lockedCats[i];
+      parts.push(catLabel(k) + ": " + (game.remainingCounts[k] || 0));
+    }
+    return parts.join(" • ");
+  }
+
+  function renderHeader(){
+    lockedCatsLine.textContent = "Kategorie (w tej grze): " + catsText();
+    poolLine.textContent = "Pozostało pytań: " + game.remaining.length + " • " + countsText();
+  }
+
+  function renderTurn(){
+    var p = pair();
+    var left = game.changesLeft[p.targetIdx] || 0;
+
+    turnLine.textContent = "Teraz: " + p.asker + " losuje pytanie dla " + p.target;
+    otherLine.textContent = "Zmiany pytania dla " + p.target + ": " + left + "/2";
+
+    otherBtn.textContent = "Inne pytanie (" + left + ")";
+    otherBtn.disabled = (left <= 0 || !game.current);
+    copyBtn.disabled = (!game.current);
+  }
+
+  function drawRandom(){
+    if(game.remaining.length <= 0) return null;
+    var idx = randInt(game.remaining.length);
+    var q = game.remaining[idx];
+    game.remaining.splice(idx,1);
+    game.remainingCounts[q.catKey] = (game.remainingCounts[q.catKey] || 0) - 1;
+    if(game.remainingCounts[q.catKey] < 0) game.remainingCounts[q.catKey] = 0;
+    return q;
+  }
+
+  function animateQuestion(){
+    questionLine.classList.remove("q-anim");
+    void questionLine.offsetWidth;
+    questionLine.classList.add("q-anim");
+  }
+
+  function showQuestion(){
+    var q = drawRandom();
+    if(!q){
+      game.current = null;
+      questionLine.textContent = "Skończyły się pytania w tej grze. Kliknij „Reset puli” albo „Nowa gra”.";
+      otherBtn.disabled = true;
+      copyBtn.disabled = true;
+      mainBtn.disabled = true;
+      renderHeader(); renderTurn(); animateQuestion();
+      return;
+    }
+    game.current = q;
+    questionLine.textContent = q.text;
+    mainBtn.disabled = false;
+    renderHeader(); renderTurn(); animateQuestion();
+  }
+
+  function nextPlayer(){
+    game.turnAsker = (game.turnAsker + 1) % game.players.length;
+    showQuestion();
+  }
+
+  function otherQuestion(){
+    if(!game.current) return;
+    var p = pair();
+    var left = game.changesLeft[p.targetIdx] || 0;
+    if(left <= 0) return;
+    game.changesLeft[p.targetIdx] = left - 1;
+    showQuestion();
+  }
+
+  function resetPoolThisGame(){
+    var built = buildPool(game.lockedCats);
+    game.remaining = built.pool;
+    game.remainingCounts = built.counts;
+    mainBtn.disabled = false;
+    showQuestion();
+  }
+
+  function copyCurrent(){
+    if(!game.current) return;
+    var p = pair();
+    var payload = "[" + catLabel(game.current.catKey) + "] " + p.asker + " → " + p.target + ": " + game.current.text;
+
+    var ok = (navigator.clipboard && navigator.clipboard.writeText) ? navigator.clipboard.writeText(payload) : Promise.reject();
+    ok.then(function(){
+      copyBtn.textContent = "Skopiowano ✓";
+      setTimeout(function(){ copyBtn.textContent="Kopiuj"; }, 900);
+    }).catch(function(){
+      var ta=document.createElement("textarea");
+      ta.value=payload;
+      document.body.appendChild(ta);
+      ta.select();
+      try{document.execCommand("copy");}catch(e){}
+      document.body.removeChild(ta);
+      copyBtn.textContent = "Skopiowano ✓";
+      setTimeout(function(){ copyBtn.textContent="Kopiuj"; }, 900);
+    });
+  }
+
+  function startGame(){
+    var players = getPlayers();
+    var cats = selectedCatsArray();
+    if(players.length < 2 || cats.length < 1) return;
+
+    var built = buildPool(cats);
+    game.players = players;
+    game.lockedCats = cats;
+    game.remaining = built.pool;
+    game.remainingCounts = built.counts;
+
+    game.turnAsker = randInt(players.length);
+    game.changesLeft = [];
+    for(var i=0;i<players.length;i++) game.changesLeft.push(2);
+
+    showPlay();
+    showQuestion();
+  }
+
+  // init
+  renderPlayerCount();
+  renderChips();
+  renderPlayers(false);
+  showStart();
+
+  playerCountEl.addEventListener("change", function(){ renderPlayers(true); });
+  startBtn.addEventListener("click", startGame);
+  goSetupBtn.addEventListener("click", showSetup);
+
+  mainBtn.addEventListener("click", nextPlayer);
+  otherBtn.addEventListener("click", otherQuestion);
+  copyBtn.addEventListener("click", copyCurrent);
+  resetPoolBtn.addEventListener("click", resetPoolThisGame);
+})();
+
+</script>
+</body>
+</html>
